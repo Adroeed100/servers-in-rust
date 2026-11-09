@@ -1,48 +1,52 @@
-name: Node.js CI/CD
+name: Rust Server CI
 
-# 1. Triggers: When should this pipeline run?
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
-# 2. Jobs: What should the pipeline do?
 jobs:
-  # CI Phase: Build and Test
   build-and-test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    # Step A: Bring your code into the runner
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # Step B: Install the runtime environment
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
 
-    # Step C: Install your project's dependencies
-    - name: Install dependencies
-      run: npm install
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
 
-    # Step D: Run your testing suite
-    - name: Run tests
-      run: npm test
+      - name: Check formatting
+        run: cargo fmt --check
 
-  # CD Phase: Deploy
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests
+        run: cargo test --all-targets
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-server-binary
+          path: target/release/server
+
   deploy:
-    # Ensure this job only runs if 'build-and-test' is successful
     needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    
-    # Only deploy if the push was directly to the main branch
-    if: github.ref == 'refs/heads/main'
-    
+
     steps:
-    - name: Deploy to production
-      run: |
-        echo "Deploying application..."
-        
+      - name: Deploy placeholder
+        run: |
+          echo "Deploy your Rust server here"
+          echo "Example: copy target/release/server to your VPS and restart the service"
