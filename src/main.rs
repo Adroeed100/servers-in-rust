@@ -31,6 +31,4 @@ fn handle_connection(mut stream: TcpStream) {
     println!("Response: {response:#?}");
 
     stream.write_all(response.as_bytes()).unwrap();
-
-    
 }
